@@ -1,46 +1,64 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
-class EnvironmentalDataInput(BaseModel):
-    region_name: str = Field(..., example="Palar River Basin")
-    latitude: Optional[float] = Field(12.92, example=12.92)
-    longitude: Optional[float] = Field(79.33, example=79.33)
-    pm2_5: float = Field(..., example=88.5)
-    pm10: float = Field(..., example=165.2)
-    so2: float = Field(..., example=42.0)
-    no2: float = Field(..., example=55.1)
-    water_ph: float = Field(..., example=5.8)
-    water_tds: float = Field(..., example=1850.0)
-    water_do: float = Field(..., example=3.2)
-    water_bod: float = Field(..., example=14.5)
-    lead_ppm: float = Field(..., example=0.08)
-    chromium_ppm: float = Field(..., example=0.42)
-    industrial_density: Optional[str] = Field("High", example="High")
+class ProductCreate(BaseModel):
+    name: str = Field(..., example="Sugar 1kg")
+    category: Optional[str] = Field(default="General", example="Grains & Staples")
+    price: float = Field(..., gt=0, example=45.0)
+    stock_quantity: int = Field(default=0, ge=0, example=25)
+    unit: Optional[str] = Field(default="unit", example="kg")
+    min_stock_alert: Optional[int] = Field(default=5, ge=0, example=5)
 
-class AnalysisResponse(BaseModel):
-    region_name: str
-    overall_eqi: float
-    air_subindex: float
-    water_subindex: float
-    soil_subindex: float
-    risk_level: str
-    ai_summary: str
-    recommendations: List[str]
-    engine: str
-
-class RegionResponse(BaseModel):
+class ProductResponse(BaseModel):
     id: int
     name: str
-    latitude: float
-    longitude: float
-    pm2_5: float
-    pm10: float
-    so2: float
-    no2: float
-    water_ph: float
-    water_tds: float
-    water_do: float
-    water_bod: float
-    lead_ppm: float
-    chromium_ppm: float
-    industrial_density: str
+    category: Optional[str] = None
+    price: float
+    stock_quantity: int
+    unit: str
+    min_stock_alert: int
+
+class ChatMessageRequest(BaseModel):
+    customer_phone: Optional[str] = Field(default=None, example="+919876543210")
+    message: str = Field(..., example="Do you have Rice 1kg in stock and what is the price?")
+
+class ChatMessageResponse(BaseModel):
+    reply: str
+    intent: Optional[str] = None
+    items_detected: Optional[List[Dict[str, Any]]] = []
+    action_taken: Optional[str] = None
+
+class ReceiptParseRequest(BaseModel):
+    receipt_text: str = Field(..., example="Rice 1kg - 20 qty @ 55\nSugar 1kg - 15 qty @ 42")
+    auto_update_inventory: Optional[bool] = Field(default=False, example=True)
+
+class ParsedReceiptItem(BaseModel):
+    name: str
+    quantity: int
+    unit_price: float
+    total: float
+
+class ReceiptParseResponse(BaseModel):
+    parsed_items: List[ParsedReceiptItem]
+    total_amount: float
+    inventory_updated: bool
+    message: str
+
+class SaleCreate(BaseModel):
+    product_id: Optional[int] = Field(default=None, example=1)
+    product_name: Optional[str] = Field(default=None, example="Rice 1kg")
+    quantity: int = Field(default=1, gt=0, example=2)
+    total_amount: Optional[float] = Field(default=None, example=120.0)
+
+class SaleResponse(BaseModel):
+    id: int
+    product_id: Optional[int] = None
+    product_name: str
+    quantity: int
+    total_amount: float
+    timestamp: Optional[str] = None
+
+class SalesSummaryResponse(BaseModel):
+    sales: List[SaleResponse]
+    total_revenue: float
+    total_sales_count: int

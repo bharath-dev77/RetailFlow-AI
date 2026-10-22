@@ -1,6 +1,6 @@
 import os
 import sys
-import json
+import datetime
 import pandas as pd
 import streamlit as st
 
@@ -10,14 +10,16 @@ BACKEND_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "..", "backend"))
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from app import database, analyzer
+from app import database
+from app.services import ai_service, ocr_service
 
 # Initialize database
 database.init_db()
 
+# Page configuration
 st.set_page_config(
-    page_title="Smart Environmental Impact Analyzer",
-    page_icon="🌍",
+    page_title="RetailFlow AI - Local Retail Automator",
+    page_icon="🏪",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -25,330 +27,351 @@ st.set_page_config(
 # Custom Styling
 st.markdown("""
 <style>
-    .main-title {
+    .main-header {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #065F46;
+        color: #1E3A8A;
         margin-bottom: 0.2rem;
     }
-    .sub-title {
-        font-size: 1.05rem;
+    .sub-header {
+        font-size: 1rem;
         color: #4B5563;
-        margin-bottom: 1.2rem;
-    }
-    .risk-safe {
-        color: #059669;
-        font-weight: bold;
-    }
-    .risk-watch {
-        color: #D97706;
-        font-weight: bold;
-    }
-    .risk-hazard {
-        color: #DC2626;
-        font-weight: bold;
-    }
-    .metric-box {
-        background-color: #F0FDF4;
-        border: 1px solid #BBF7D0;
-        border-radius: 8px;
-        padding: 12px;
-        text-align: center;
+        margin-bottom: 1.5rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
-    st.image("https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&q=80", use_container_width=True)
-    st.title("🌍 EcoAnalyzer AI")
-    st.caption("Open Source Environmental Analytics")
-    st.markdown("---")
-    st.write("**Framework:** EcoAnalyzer AI Engine")
-    st.write("**Environment:** Real-Time Monitoring")
-    
-    
+    st.image("https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=400&q=80", use_container_width=True)
+    st.title("🏪 RetailFlow AI")
+    st.caption("AI-Powered Local Retail Automator for Kirana & Retail Stores")
     st.markdown("---")
     
-    st.write("🌿 **System Status:** Active")
-    st.write("⚡ **AI Mode:** Free-Tier Heuristic / Gemini Ready")
+    st.write("**Store Details:**")
+    st.write("📍 **Store:** Krishna Stores & Provisions")
+    st.write("🕒 **Hours:** 7:30 AM – 10:00 PM Daily")
+    st.write("📞 **Phone:** +91 98765 43210")
+    st.markdown("---")
+    
+    products = database.get_all_products()
+    low_stock = [p for p in products if p["stock_quantity"] <= p.get("min_stock_alert", 5)]
+    
+    st.write("🚨 **System Status**")
+    if low_stock:
+        st.error(f"{len(low_stock)} items need restocking!")
+    else:
+        st.success("All stock levels healthy.")
+    
     st.caption("100% Free & Open-Source Stack")
 
-# App Header
-st.markdown("<div class='main-title'>🌍 Smart Environmental Impact Analyzer</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-title'>An AI-assisted educational and analytical tool for transforming complex industrial pollution datasets into organized predictive risk summaries.</div>", unsafe_allow_html=True)
+# Header
+st.markdown("<div class='main-header'>🏪 RetailFlow AI — Local Retail Automator</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-header'>Automated WhatsApp customer inquiries, zero-cost invoice digitizer, and smart inventory management.</div>", unsafe_allow_html=True)
 
 # Navigation Tabs
-tab_overview, tab_input, tab_analysis, tab_history, tab_about = st.tabs([
-    "🌿 Regional Overview",
-    "📥 Data Input & CSV Upload",
-    "📊 AI Impact Analysis",
-    "📜 History & Comparison",
-    "ℹ️ About & Guide"
+tab_inventory, tab_bot, tab_ocr, tab_pos = st.tabs([
+    "📦 Inventory Management",
+    "🤖 WhatsApp Customer Bot",
+    "🧾 Bill & Receipt Digitizer",
+    "📊 POS & Sales Ledger"
 ])
 
 # -------------------------------------------------------------
-# TAB 1: REGIONAL OVERVIEW
+# TAB 1: INVENTORY MANAGEMENT
 # -------------------------------------------------------------
-with tab_overview:
-    st.subheader("Monitored Industrial Regions & Baseline Metrics")
-    regions = database.get_all_regions()
+with tab_inventory:
+    st.subheader("Current Store Inventory")
+    products = database.get_all_products()
     
-    if regions:
-        df_regions = pd.DataFrame(regions)
-        
-        # Summary KPI Cards
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Monitored Regions", len(regions))
-        avg_pm25 = df_regions["pm2_5"].mean()
-        c2.metric("Avg PM2.5 Level", f"{avg_pm25:.1f} µg/m³", delta="Air Hazard" if avg_pm25 > 60 else "Safe", delta_color="inverse")
-        avg_tds = df_regions["water_tds"].mean()
-        c3.metric("Avg Water TDS", f"{avg_tds:.0f} mg/L", delta="Saline / Polluted" if avg_tds > 1000 else "Normal", delta_color="inverse")
-        high_risk_count = sum(1 for r in regions if r["industrial_density"] in ["High", "Very High"])
-        c4.metric("High Industrial Zones", high_risk_count)
-        
-        st.markdown("### 📍 Regional Geographic Clusters")
-        map_data = df_regions[["latitude", "longitude"]].copy()
-        st.map(map_data, zoom=7)
-        
-        st.markdown("### 📋 Detailed Environmental Parameters")
-        display_cols = ["name", "latitude", "longitude", "pm2_5", "pm10", "water_ph", "water_tds", "water_do", "chromium_ppm", "industrial_density"]
-        st.dataframe(df_regions[display_cols], use_container_width=True, hide_index=True)
+    # KPI Row
+    col_p1, col_p2, col_p3 = st.columns(3)
+    total_val = sum(p["price"] * p["stock_quantity"] for p in products)
+    low_stock_count = sum(1 for p in products if p["stock_quantity"] <= p.get("min_stock_alert", 5))
+    
+    col_p1.metric("Total Unique Products", len(products))
+    col_p2.metric("Inventory Valuation", f"₹ {total_val:,.2f}")
+    col_p3.metric("Low Stock Alerts", low_stock_count, delta=-low_stock_count if low_stock_count > 0 else 0, delta_color="inverse")
+    
+    if low_stock_count > 0:
+        st.warning(f"⚠️ **Attention Required:** {low_stock_count} item(s) are at or below their reorder threshold!")
+    
+    # Display table
+    df_products = pd.DataFrame(products)
+    if not df_products.empty:
+        df_display = df_products[["id", "name", "category", "price", "stock_quantity", "unit", "min_stock_alert"]].copy()
+        df_display.columns = ["ID", "Product Name", "Category", "Selling Price (₹)", "Current Stock", "Unit", "Alert Level"]
+        st.dataframe(df_display, use_container_width=True, hide_index=True)
     else:
-        st.info("No regions registered in database.")
+        st.info("No products found in the database. Add your first item below!")
+        
+    st.markdown("---")
+    
+    # Quick Stock Adjustment & New Product Form
+    col_adj, col_add = st.columns(2)
+    
+    with col_adj:
+        st.markdown("### ⚡ Quick Stock Adjustment")
+        if products:
+            selected_product_name = st.selectbox(
+                "Select Product to Adjust", 
+                options=[p["name"] for p in products],
+                key="adj_prod"
+            )
+            selected_prod = next(p for p in products if p["name"] == selected_product_name)
+            st.info(f"Current Stock for **{selected_prod['name']}**: `{selected_prod['stock_quantity']} {selected_prod['unit']}`")
+            
+            col_b1, col_b2, col_b3 = st.columns(3)
+            with col_b1:
+                if st.button("➕ Add 1", key="btn_add_1"):
+                    database.update_stock(selected_prod["id"], 1)
+                    st.success("Added 1 unit!")
+                    st.rerun()
+            with col_b2:
+                if st.button("➖ Remove 1", key="btn_sub_1"):
+                    database.update_stock(selected_prod["id"], -1)
+                    st.warning("Removed 1 unit!")
+                    st.rerun()
+            with col_b3:
+                if st.button("📦 Restock +10", key="btn_add_10"):
+                    database.update_stock(selected_prod["id"], 10)
+                    st.success("Restocked 10 units!")
+                    st.rerun()
+                    
+            with st.form("custom_adjust_form"):
+                qty_delta = st.number_input("Custom Delta (+ to add, - to subtract)", value=0, step=1)
+                submit_delta = st.form_submit_button("Update Stock")
+                if submit_delta and qty_delta != 0:
+                    database.update_stock(selected_prod["id"], int(qty_delta))
+                    st.success(f"Adjusted stock by {qty_delta}!")
+                    st.rerun()
+
+    with col_add:
+        st.markdown("### ➕ Add or Restock Product")
+        with st.form("new_product_form"):
+            new_name = st.text_input("Product Name (e.g. Masoor Dal 500g)")
+            new_cat = st.selectbox("Category", ["Grains & Pulses", "Dairy", "Beverages", "Spices & Oils", "Snacks", "Personal Care", "Other"])
+            new_price = st.number_input("Selling Price (₹)", min_value=0.0, value=50.0, step=1.0)
+            new_qty = st.number_input("Stock Quantity", min_value=0, value=20, step=1)
+            new_unit = st.selectbox("Unit", ["pack", "kg", "g", "liter", "ml", "bottle", "piece"])
+            new_alert = st.number_input("Min Stock Alert Threshold", min_value=1, value=5, step=1)
+            
+            submitted = st.form_submit_button("Save to Inventory")
+            if submitted:
+                if new_name.strip():
+                    database.upsert_product(
+                        name=new_name.strip(),
+                        category=new_cat,
+                        price=float(new_price),
+                        stock_quantity=int(new_qty),
+                        unit=new_unit,
+                        min_stock_alert=int(new_alert)
+                    )
+                    st.success(f"Product '{new_name}' saved successfully!")
+                    st.rerun()
+                else:
+                    st.error("Please enter a valid product name.")
 
 # -------------------------------------------------------------
-# TAB 2: DATA INPUT & CSV UPLOAD
+# TAB 2: WHATSAPP CUSTOMER BOT SIMULATOR
 # -------------------------------------------------------------
-with tab_input:
-    st.subheader("Regional Environmental Data Ingestion")
-    st.write("Upload a CSV/JSON file of sensor readings or manually specify parameters for a new industrial cluster.")
+with tab_bot:
+    st.subheader("💬 AI WhatsApp Customer Assistant")
+    st.write("Simulate real-time customer messages received via WhatsApp or SMS. The AI engine detects customer intent, queries live inventory, and crafts automated replies with zero external API costs.")
     
-    input_mode = st.radio("Choose Input Method:", ["Select from Pre-Loaded Regions", "Upload CSV Dataset", "Manual Coordinate & Metric Entry"], horizontal=True)
-    
-    selected_metrics = None
-    
-    if input_mode == "Select from Pre-Loaded Regions":
-        regions = database.get_all_regions()
-        reg_names = [r["name"] for r in regions]
-        chosen_name = st.selectbox("Select Target Cluster:", reg_names)
-        chosen_reg = next(r for r in regions if r["name"] == chosen_name)
-        selected_metrics = {
-            "region_name": chosen_reg["name"],
-            "latitude": chosen_reg["latitude"],
-            "longitude": chosen_reg["longitude"],
-            "pm2_5": chosen_reg["pm2_5"],
-            "pm10": chosen_reg["pm10"],
-            "so2": chosen_reg["so2"],
-            "no2": chosen_reg["no2"],
-            "water_ph": chosen_reg["water_ph"],
-            "water_tds": chosen_reg["water_tds"],
-            "water_do": chosen_reg["water_do"],
-            "water_bod": chosen_reg["water_bod"],
-            "lead_ppm": chosen_reg["lead_ppm"],
-            "chromium_ppm": chosen_reg["chromium_ppm"],
-            "industrial_density": chosen_reg["industrial_density"]
-        }
-        st.success(f"Selected: **{chosen_reg['name']}** (Lat: {chosen_reg['latitude']}, Lon: {chosen_reg['longitude']})")
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {"role": "assistant", "content": "Hello! Welcome to Krishna Stores. How can I help you today? You can ask about product availability, prices, or store timings!"}
+        ]
         
-    elif input_mode == "Upload CSV Dataset":
-        st.info("Download sample CSV format or upload your custom regional monitoring logs.")
-        sample_csv_path = os.path.join(CURRENT_DIR, "..", "data", "sample_regional_data.csv")
-        if os.path.exists(sample_csv_path):
-            with open(sample_csv_path, "r") as f:
-                st.download_button("📥 Download Sample Regional Dataset (CSV)", f.read(), file_name="sample_environmental_data.csv", mime="text/csv")
-                
-        uploaded_file = st.file_uploader("Upload CSV Data File", type=["csv"])
-        if uploaded_file:
-            try:
-                df_up = pd.read_csv(uploaded_file)
-                st.write("Uploaded Preview:")
-                st.dataframe(df_up.head(), use_container_width=True)
-                
-                row_idx = st.selectbox("Select Row to Analyze:", range(len(df_up)), format_func=lambda i: f"Row {i+1}: {df_up.iloc[i].get('region_name', 'Region ' + str(i+1))}")
-                sel_row = df_up.iloc[row_idx]
-                selected_metrics = {
-                    "region_name": str(sel_row.get("region_name", f"Uploaded Region {row_idx+1}")),
-                    "latitude": float(sel_row.get("latitude", 13.0)),
-                    "longitude": float(sel_row.get("longitude", 80.0)),
-                    "pm2_5": float(sel_row.get("pm2_5", 50.0)),
-                    "pm10": float(sel_row.get("pm10", 90.0)),
-                    "so2": float(sel_row.get("so2", 20.0)),
-                    "no2": float(sel_row.get("no2", 30.0)),
-                    "water_ph": float(sel_row.get("water_ph", 7.0)),
-                    "water_tds": float(sel_row.get("water_tds", 800.0)),
-                    "water_do": float(sel_row.get("water_do", 6.0)),
-                    "water_bod": float(sel_row.get("water_bod", 4.0)),
-                    "lead_ppm": float(sel_row.get("lead_ppm", 0.01)),
-                    "chromium_ppm": float(sel_row.get("chromium_ppm", 0.02)),
-                    "industrial_density": str(sel_row.get("industrial_density", "Moderate"))
-                }
-            except Exception as e:
-                st.error(f"Error reading CSV: {e}")
-                
+    # Quick Test Chips
+    st.write("**Try asking:**")
+    quick_cols = st.columns(4)
+    q1 = quick_cols[0].button("🌾 'Do you have rice?'")
+    q2 = quick_cols[1].button("🥛 'What is price of milk?'")
+    q3 = quick_cols[2].button("🛍️ 'Order 2 packets of milk'")
+    q4 = quick_cols[3].button("🕒 'What are your store hours?'")
+    
+    test_query = None
+    if q1: test_query = "Do you have rice in stock?"
+    if q2: test_query = "What is the price of milk?"
+    if q3: test_query = "I want to order 2 packets of milk"
+    if q4: test_query = "What time does your store open today?"
+    
+    # Display Chat
+    chat_container = st.container()
+    with chat_container:
+        for msg in st.session_state.messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+                if "metadata" in msg:
+                    with st.expander("🔍 Intent & Entities Detected by AI", expanded=False):
+                        st.json(msg["metadata"])
+                        
+    # Input box
+    user_input = st.chat_input("Type a customer message...") or test_query
+    if user_input:
+        # Add user message
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        
+        # Process message with AI Service
+        bot_response = ai_service.handle_customer_message(user_input, "+91 99887 76655")
+        reply_text = bot_response.get("reply") or bot_response.get("response_text") or "Thank you for reaching out!"
+        
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": reply_text,
+            "metadata": {
+                "intent": bot_response.get("intent"),
+                "items_detected": bot_response.get("items_detected") or bot_response.get("extracted_items", []),
+                "action_taken": bot_response.get("action_taken") or bot_response.get("status")
+            }
+        })
+        st.rerun()
+
+# -------------------------------------------------------------
+# TAB 3: RECEIPT & INVOICE DIGITIZER (OCR)
+# -------------------------------------------------------------
+with tab_ocr:
+    st.subheader("🧾 Zero-Cost Bill & Supplier Invoice Digitizer")
+    st.write("Scan or paste wholesale vendor invoices to automatically parse line items, prices, and quantities without manual data entry.")
+    
+    SAMPLE_INVOICES = {
+        "Sample 1: Sri Lakshmi Wholesale Provisions": """SRI LAKSHMI WHOLESALE PROVISIONS
+Invoice No: INV-2026-881
+Date: 14-Sep-2026
+
+Items:
+Rice 1kg - 50 qty @ Rs. 52.00
+Sugar 1kg - 30 qty @ Rs. 40.00
+Wheat Flour 1kg - 25 qty @ Rs. 45.00
+Cooking Oil 1L - 20 qty @ Rs. 130.00
+
+Total Items: 125
+Grand Total: Rs. 7,525.00""",
+        
+        "Sample 2: Dairy Fresh Milk & Beverage Supplies": """DAIRY FRESH COOPERATIVE DISTRIBUTORS
+Bill: DF-9042
+Date: 14/09/2026
+
+Items Supplied:
+Milk 500ml x 40 @ 28.00
+Tea Powder 250g x 15 @ 75.00
+
+Total: Rs. 2,245.00""",
+        
+        "Sample 3: Custom Plain Text Format": """Wholesale Mart
+Date: 2026-09-14
+Rice 1kg, 20, 50.00
+Sugar 1kg, 15, 38.00
+Tea Powder 250g, 10, 70.00
+Total: 2270"""
+    }
+    
+    selected_sample = st.selectbox("Load Sample Invoice or Enter Custom:", list(SAMPLE_INVOICES.keys()) + ["Enter Custom Text"])
+    
+    if selected_sample == "Enter Custom Text":
+        raw_invoice_text = st.text_area("Paste receipt or invoice text here:", height=160)
     else:
-        st.markdown("### ✍️ Manual Ecological Reading Entry")
-        with st.form("manual_entry_form"):
-            col_m1, col_m2 = st.columns(2)
-            with col_m1:
-                man_name = st.text_input("Region Name", value="Ranipet SIPCOT Industrial Zone")
-                man_lat = st.number_input("Latitude", value=12.92, format="%.4f")
-                man_lon = st.number_input("Longitude", value=79.33, format="%.4f")
-                man_pm25 = st.number_input("PM2.5 (µg/m³)", value=85.0, min_value=0.0)
-                man_pm10 = st.number_input("PM10 (µg/m³)", value=150.0, min_value=0.0)
-                man_so2 = st.number_input("SO2 (µg/m³)", value=35.0, min_value=0.0)
-                man_no2 = st.number_input("NO2 (µg/m³)", value=45.0, min_value=0.0)
-            with col_m2:
-                man_ph = st.number_input("Water pH", value=6.2, min_value=0.0, max_value=14.0)
-                man_tds = st.number_input("Water TDS (mg/L)", value=1750.0, min_value=0.0)
-                man_do = st.number_input("Dissolved Oxygen (mg/L)", value=3.5, min_value=0.0)
-                man_bod = st.number_input("BOD (mg/L)", value=12.0, min_value=0.0)
-                man_lead = st.number_input("Lead Content (ppm)", value=0.06, format="%.4f")
-                man_cr = st.number_input("Chromium Content (ppm)", value=0.35, format="%.4f")
-                man_density = st.selectbox("Industrial Activity Level", ["Low", "Moderate", "High", "Very High"])
-                
-            btn_save = st.form_submit_button("Load Metrics for Analysis")
-            if btn_save:
-                selected_metrics = {
-                    "region_name": man_name,
-                    "latitude": man_lat,
-                    "longitude": man_lon,
-                    "pm2_5": man_pm25,
-                    "pm10": man_pm10,
-                    "so2": man_so2,
-                    "no2": man_no2,
-                    "water_ph": man_ph,
-                    "water_tds": man_tds,
-                    "water_do": man_do,
-                    "water_bod": man_bod,
-                    "lead_ppm": man_lead,
-                    "chromium_ppm": man_cr,
-                    "industrial_density": man_density
-                }
-                st.success(f"Metrics prepared for: **{man_name}**")
-
-    if selected_metrics:
-        st.session_state["active_metrics"] = selected_metrics
-        st.info("Metrics locked! Navigate to the 'AI Impact Analysis' tab or click the button below to generate the report.")
-        if st.button("🚀 Run AI Impact Analysis Now", type="primary"):
-            st.session_state["trigger_analysis"] = True
-
-# -------------------------------------------------------------
-# TAB 3: AI IMPACT ANALYSIS
-# -------------------------------------------------------------
-with tab_analysis:
-    st.subheader("AI Predictive Environmental Risk Assessment")
+        raw_invoice_text = st.text_area("Invoice Text:", value=SAMPLE_INVOICES[selected_sample], height=160)
+        
+    col_ocr_btn, col_ocr_res = st.columns([1, 2])
     
-    curr_metrics = st.session_state.get("active_metrics")
-    if not curr_metrics:
-        # Default to Palar River Basin
-        default_reg = database.get_region_by_name("Palar River Basin (Ranipet Industrial Area)")
-        if default_reg:
-            curr_metrics = default_reg
-            st.session_state["active_metrics"] = default_reg
-            
-    if curr_metrics:
-        st.write(f"Analyzing Target: **{curr_metrics['region_name']}**")
+    with col_ocr_btn:
+        auto_update = st.checkbox("Auto-update inventory when processed", value=False)
+        process_btn = st.button("⚡ Parse & Digitize Invoice", type="primary")
         
-        # Run analysis
-        with st.spinner("Processing multi-factor ecological models and generating AI synthesis..."):
-            result = analyzer.analyze_environmental_metrics(curr_metrics)
-            
-        # Top-level indicators
-        col_res1, col_res2, col_res3, col_res4 = st.columns(4)
-        eqi_val = result["overall_eqi"]
-        
-        col_res1.metric("Overall EQI", f"{eqi_val}/100", help="Environmental Quality Index: 100 = Pristine, <40 = Severe Hazard")
-        col_res2.metric("Air Health Score", f"{result['air_subindex']}/100")
-        col_res3.metric("Water Quality Score", f"{result['water_subindex']}/100")
-        col_res4.metric("Soil/Effluent Score", f"{result['soil_subindex']}/100")
-        
-        # Risk Badge
-        risk_lvl = result["risk_level"]
-        if "Low Risk" in risk_lvl:
-            st.success(f"🌿 **Ecosystem Classification:** {risk_lvl}")
-        elif "Moderate" in risk_lvl:
-            st.warning(f"⚠️ **Ecosystem Classification:** {risk_lvl}")
+    if process_btn:
+        if raw_invoice_text.strip():
+            parsed_result = ocr_service.parse_receipt_text(raw_invoice_text, auto_update_inventory=auto_update)
+            st.session_state["parsed_ocr"] = parsed_result
+            st.success(parsed_result.get("message", "Invoice successfully processed!"))
         else:
-            st.error(f"🚨 **Ecosystem Classification:** {risk_lvl}")
+            st.error("Please provide invoice text to process.")
             
-        st.markdown("---")
+    if "parsed_ocr" in st.session_state:
+        res = st.session_state["parsed_ocr"]
+        st.markdown("### 📋 Digitized Line Items")
         
-        col_left, col_right = st.columns([3, 2])
+        items = res.get("parsed_items") or res.get("items", [])
+        total_val = res.get("total_amount") or res.get("calculated_total", 0.0)
         
-        with col_left:
-            st.markdown("### 🤖 AI-Generated Predictive Summary")
-            st.markdown(result["ai_summary"])
-            st.caption(f"Synthesized by: {result['engine']}")
+        c1, c2 = st.columns(2)
+        c1.metric("Items Detected", len(items))
+        c2.metric("Calculated Invoice Total", f"₹ {total_val:,.2f}")
+        
+        if items:
+            df_items = pd.DataFrame(items)
+            st.dataframe(df_items, use_container_width=True, hide_index=True)
             
-            st.markdown("### 🛠️ Recommended Remediation Protocol")
-            for idx, rec in enumerate(result.get("recommendations", [])):
-                st.markdown(f"**{idx+1}.** {rec}")
-                
-        with col_right:
-            st.markdown("### 📊 Sub-Index Health Breakdown")
-            scores_df = pd.DataFrame({
-                "Domain": ["Air Quality", "Water Quality", "Soil & Heavy Metals", "Overall EQI"],
-                "Score (0-100)": [result["air_subindex"], result["water_subindex"], result["soil_subindex"], result["overall_eqi"]]
-            })
-            st.bar_chart(scores_df.set_index("Domain"))
-            
-            # Save button
-            if st.button("💾 Save This Assessment to History"):
-                database.save_analysis(
-                    region_name=result["region_name"],
-                    latitude=curr_metrics.get("latitude", 0.0),
-                    longitude=curr_metrics.get("longitude", 0.0),
-                    overall_eqi=result["overall_eqi"],
-                    air_score=result["air_subindex"],
-                    water_score=result["water_subindex"],
-                    soil_score=result["soil_subindex"],
-                    risk_level=result["risk_level"],
-                    ai_summary=result["ai_summary"],
-                    recommendations=result.get("recommendations", [])
-                )
-                st.success("Assessment archived to database successfully!")
-    else:
-        st.warning("Please select or input regional data in the 'Data Input' tab first.")
+            if not res.get("inventory_updated"):
+                if st.button("📥 Commit These Items to Store Inventory", key="commit_inv"):
+                    for item in items:
+                        existing = database.get_product_by_name(item["name"])
+                        if existing:
+                            database.update_stock(existing["id"], item["quantity"])
+                        else:
+                            database.upsert_product(
+                                name=item["name"],
+                                category="Wholesale Restock",
+                                price=round(item["unit_price"] * 1.2, 2), # 20% margin default
+                                stock_quantity=item["quantity"],
+                                unit="pack",
+                                min_stock_alert=5
+                            )
+                    st.success("Stock updated in database successfully!")
+                    st.rerun()
+        else:
+            st.warning("No line items could be parsed. Check the text format.")
 
 # -------------------------------------------------------------
-# TAB 4: HISTORY & REGION COMPARISON
+# TAB 4: SALES & POS COUNTER BILLING
 # -------------------------------------------------------------
-with tab_history:
-    st.subheader("Historical Assessment Ledger & Region Review")
-    history_logs = database.get_analysis_history()
+with tab_pos:
+    st.subheader("📊 Point of Sale (POS) Counter Billing")
     
-    if history_logs:
-        df_hist = pd.DataFrame(history_logs)
-        st.dataframe(df_hist[["id", "region_name", "overall_eqi", "air_score", "water_score", "soil_score", "risk_level", "created_at"]], hide_index=True, use_container_width=True)
-        
-        st.markdown("### 🔍 Historical Comparison Chart")
-        comp_df = df_hist[["region_name", "overall_eqi", "air_score", "water_score"]].drop_duplicates("region_name")
-        st.line_chart(comp_df.set_index("region_name"))
-    else:
-        st.info("No assessments logged yet. Run your first analysis in Tab 3!")
-
-# -------------------------------------------------------------
-# TAB 5: ABOUT & SCIENTIFIC GUIDE
-# -------------------------------------------------------------
-with tab_about:
-    st.subheader("About the Project & Ecological Standards")
-    st.markdown("""
-    **Project Title:** Smart Environmental Impact Analyzer  
-    **Project:** Open-Source Ecological Risk Platform  
-    **Engine:** Heuristic NLP + Multi-Domain EQI  
-      
-      
-      
-
-    ---
-
-    ### 📖 Metric Definitions & Reference Thresholds
-    1. **PM2.5 / PM10 (Particulate Matter):** Fine inhalable particles. Thresholds derived from Central Pollution Control Board (CPCB) standards (Safe: PM2.5 < 60 µg/m³, PM10 < 100 µg/m³).
-    2. **Water TDS (Total Dissolved Solids):** Measures mineral, salt, and organic dissolved matter. Safe drinking water is < 500 mg/L. Heavy industrial effluents exceed 1500 mg/L.
-    3. **Dissolved Oxygen (DO):** Vital indicator of waterbody health. DO levels < 4.0 mg/L induce aquatic hypoxia.
-    4. **BOD (Biochemical Oxygen Demand):** Measures organic pollution load. Values > 8.0 mg/L indicate serious municipal or industrial wastewater contamination.
-    5. **Hexavalent Chromium (Cr VI):** Characteristic heavy metal contaminant associated with industrial leather tanning and dyeing, strictly bounded at 0.05 ppm.
-
-    *Note: Designed as an educational and analytical tool for engineering research.*
-    """)
+    col_pos_left, col_pos_right = st.columns([1, 1])
+    
+    with col_pos_left:
+        st.markdown("### 🛒 New Customer Sale")
+        products = database.get_all_products()
+        if products:
+            with st.form("pos_sale_form"):
+                pos_prod_name = st.selectbox("Select Product", [p["name"] for p in products])
+                prod_obj = next(p for p in products if p["name"] == pos_prod_name)
+                
+                st.write(f"Unit Price: **₹ {prod_obj['price']:.2f}** | Available: `{prod_obj['stock_quantity']} {prod_obj['unit']}`")
+                pos_qty = st.number_input("Quantity to Sell", min_value=1, max_value=max(1, prod_obj["stock_quantity"]), value=1, step=1)
+                pos_customer = st.text_input("Customer Phone / Name (optional)", value="Walk-in Customer")
+                pos_payment = st.selectbox("Payment Method", ["Cash", "UPI / QR Code", "Store Credit / Khata"])
+                
+                total_sale_price = pos_qty * prod_obj["price"]
+                st.markdown(f"#### **Total Bill: ₹ {total_sale_price:.2f}**")
+                
+                bill_submit = st.form_submit_button("💳 Record Sale & Print Bill", type="primary")
+                if bill_submit:
+                    if prod_obj["stock_quantity"] < pos_qty:
+                        st.error("Insufficient stock!")
+                    else:
+                        database.record_sale(
+                            product_name=prod_obj["name"],
+                            quantity=int(pos_qty),
+                            total_amount=float(total_sale_price),
+                            product_id=prod_obj["id"]
+                        )
+                        st.success(f"Sale recorded: ₹ {total_sale_price:.2f} for {pos_qty} x {prod_obj['name']}")
+                        st.rerun()
+        else:
+            st.info("Please add products in the inventory tab first.")
+            
+    with col_pos_right:
+        st.markdown("### 📈 Recent Sales Ledger")
+        sales_records = database.get_sales_history()
+        if sales_records:
+            total_rev = sum(s["total_amount"] for s in sales_records)
+            st.metric("Total Revenue Logged", f"₹ {total_rev:,.2f}", f"{len(sales_records)} sales")
+            df_sales = pd.DataFrame(sales_records)
+            st.dataframe(df_sales, hide_index=True, use_container_width=True)
+        else:
+            st.info("No sales transactions recorded yet.")

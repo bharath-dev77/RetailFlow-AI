@@ -1,4 +1,4 @@
-# 🌍 EcoAnalyzer AI — Smart Environmental Impact & Risk Analyzer
+# 🏪 RetailFlow AI — AI-Powered Local Retail Automator
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -7,37 +7,27 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Operational Cost](https://img.shields.io/badge/Operational%20Cost-100%25%20Free-brightgreen.svg)](#zero-cost-architecture)
 
-> An open-source, full-stack AI analytical platform that transforms multi-sensor ecological and industrial pollution datasets into simplified, structured predictive risk summaries, multi-domain health indices, and actionable mitigation protocols.
+> A lightweight, zero-cost AI assistant and operations suite designed specifically for local retail, convenience, and Kirana stores. Automates customer inquiries via WhatsApp/SMS, digitizes vendor bills with automated text extraction, and tracks real-time inventory and sales.
 
 ---
 
-## 🌟 Overview
+## 🌟 Key Features
 
-Tracking and understanding regional environmental impact across complex air, water, and soil metrics is notoriously challenging due to fragmented reporting and non-standardized formats.
+* **💬 Conversational Customer Assistant (WhatsApp / SMS Ready):**
+  * Automatically handles incoming customer queries regarding product availability, pricing, store hours, and order placement.
+  * Powered by an offline rule-based NLP intent parser with zero external API dependencies, with optional Google Gemini Free-Tier support.
 
-**EcoAnalyzer AI** bridges this gap by unifying sensor parameters into a standardized **Environmental Quality Index (EQI)**. The system evaluates air quality (PM2.5, PM10, SO2, NO2), riverine and groundwater potability (pH, TDS, Dissolved Oxygen, BOD), and industrial heavy metal soil contamination (Lead, Hexavalent Chromium), providing environmental researchers, municipal bodies, and citizens with transparent, automated predictive hazard assessments.
+* **🧾 Zero-Cost Vendor Bill & Receipt Digitizer:**
+  * Extracts product names, quantities, unit prices, and grand totals from supplier invoices and delivery notes.
+  * Synchronizes digitized items directly into the store's inventory database with a single click.
 
----
+* **📦 Live Inventory Management:**
+  * Real-time stock status monitoring with proactive low-stock alert thresholds.
+  * Quick stock increment/decrement controls (`+1`, `-1`, `+10`) and catalog management.
 
-## 🚀 Key Features
-
-* **🗺️ Interactive Regional Pollution Map:**
-  * Geospatial cluster tracking and baseline environmental parameter visualization across industrial corridors.
-
-* **📥 Multi-Format Ecological Data Ingestion:**
-  * Ingest data via pre-seeded regional monitoring stations, custom CSV/JSON batch file upload, or manual sensor parameter entry.
-
-* **📊 Multi-Factor Environmental Quality Index (EQI):**
-  * Computes standardized Air Quality, Water Quality, and Soil/Heavy Metal Sub-indices on a 0–100 scale.
-  * Classifies ecosystems into **Low Risk (Healthy)**, **Moderate Risk (Watchlist)**, **High Risk (Hazardous)**, or **Critical Risk (Ecological Emergency)**.
-
-* **🤖 AI-Generated Predictive Impact Summaries:**
-  * Generates structured markdown impact assessments explaining primary pollution drivers, downstream groundwater risks, and localized degradation trends.
-  * Proposes concrete remediation protocols (e.g., Zero-Liquid-Discharge audits, floating bio-retention, phytoremediation).
-  * Operates 100% offline with zero external API fees, with optional support for Google Gemini Free-Tier.
-
-* **📜 Longitudinal Comparison Ledger:**
-  * Archives assessments in an embedded SQLite database for historical trend analysis and cross-regional ecological comparisons.
+* **📊 Point of Sale (POS) & Sales Ledger:**
+  * Streamlined counter billing interface supporting Cash, UPI, and Store Credit (Khata).
+  * Automatically deducts sold quantities from live inventory upon bill completion.
 
 ---
 
@@ -45,26 +35,26 @@ Tracking and understanding regional environmental impact across complex air, wat
 
 ```text
        ┌───────────────────────────────┐
-       │   Researcher / User (Web)     │
+       │   Customer (WhatsApp / Web)   │
        └──────────────┬────────────────┘
-                      │ Sensor Data / CSV / Queries
+                      │ Inbound Queries
                       ▼
        ┌───────────────────────────────┐
-       │       EcoAnalyzer API         │
+       │       RetailFlow API          │
        │         (FastAPI)             │
        └──────┬───────────────┬────────┘
               │               │
-       Sub-Index Models    Database Storage
+      Intent Parsing    Inventory Check
               │               │
        ┌──────▼────────┐┌─────▼────────┐
-       │ AI Predictive ││ SQLite       │
-       │ Synthesis     ││ Database     │
+       │ AI & OCR      ││ SQLite       │
+       │ Engine        ││ Database     │
        └───────────────┘└──────────────┘
               ▲               ▲
-              │ Analytics     │ Read/Write
+              │ Operations    │ Read/Write
        ┌──────┴───────────────┴────────┐
-       │   Streamlit Web Interface    │
-       │ (Map, Upload, EQI, Ledger)    │
+       │  Merchant Streamlit Dashboard │
+       │  (Inventory, POS, Bill Scan)  │
        └───────────────────────────────┘
 ```
 
@@ -74,43 +64,44 @@ Tracking and understanding regional environmental impact across complex air, wat
 
 | Component | Technology | Role |
 | :--- | :--- | :--- |
-| **Backend API** | FastAPI + Uvicorn | High-performance asynchronous REST endpoints |
-| **Database** | SQLite3 | Embedded, zero-configuration local database |
-| **Interactive UI** | Streamlit + Pandas | Modern reactive dashboard with maps, charts, and metric gauges |
-| **AI Risk Engine** | Heuristic NLP / Gemini Free-Tier | Deterministic ecological scoring + optional Google Generative AI |
-| **Data Visualization** | Streamlit native charts + Matplotlib | Sub-index breakdown and longitudinal comparison trends |
+| **Backend API** | FastAPI + Uvicorn | High-performance asynchronous Python REST API |
+| **Database** | SQLite 3 | Embedded, zero-configuration local SQL database |
+| **Merchant Dashboard** | Streamlit + Pandas | Modern reactive web UI with zero frontend build tooling |
+| **AI Intent Engine** | Heuristic NLP / Gemini Free-Tier | Offline regex & entity parser + optional Gemini Free Tier |
+| **Invoice Digitizer** | Heuristic Text/OCR Parser | Rule-based structural parser for receipts and delivery notes |
 
 ---
 
-## 📁 Repository Layout
+## 📁 Repository Structure
 
 ```text
-smart_environmental_analyzer/
+ai-retail-automator/
 ├── backend/
 │   └── app/
 │       ├── __init__.py
-│       ├── database.py       # SQLite models, region seeding & historical ledger
-│       ├── analyzer.py       # EQI computation, risk scoring & AI synthesis
-│       ├── models.py         # Pydantic schema validation
-│       └── main.py           # FastAPI web application endpoints
+│       ├── database.py         # SQLite database models, initialization & CRUD helpers
+│       ├── main.py             # FastAPI REST application endpoints
+│       ├── models.py           # Pydantic data schemas
+│       └── services/
+│           ├── __init__.py
+│           ├── ai_service.py   # Intent classification & customer reply generator
+│           └── ocr_service.py  # Receipt/invoice line item parsing engine
 ├── frontend/
-│   └── app.py                # Multi-tab Streamlit user interface
-├── data/
-│   └── sample_regional_data.csv  # Sample multi-region ecological dataset
-├── .env.example              # Environment variables template
-├── .gitignore                # Git ignore rules
-├── requirements.txt          # Python dependencies
-└── README.md                 # Project documentation
+│   └── app.py                  # Streamlit Merchant Operations Dashboard
+├── .env.example                # Environment variables template
+├── .gitignore                  # Git ignore rules
+├── requirements.txt            # Python dependencies
+└── README.md                   # Project documentation
 ```
 
 ---
 
-## ⚡ Quickstart Guide
+## 🚀 Quickstart Guide
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/smart-environmental-analyzer.git
-cd smart-environmental-analyzer
+git clone https://github.com/your-username/ai-retail-automator.git
+cd ai-retail-automator
 ```
 
 ### 2. Set Up Virtual Environment
@@ -129,28 +120,31 @@ source venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-### 4. Run the Streamlit Dashboard
+### 4. Run the Streamlit Merchant Dashboard
 ```bash
 python -m streamlit run frontend/app.py
 ```
 Open [http://localhost:8501](http://localhost:8501) in your browser.
 
-### 5. (Optional) Run the FastAPI REST Server
+### 5. (Optional) Run the FastAPI Backend
 ```bash
 python -m uvicorn backend.app.main:app --reload --port 8000
 ```
-Interactive API docs will be live at [http://localhost:8000/docs](http://localhost:8000/docs).
+Interactive Swagger API documentation will be available at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ---
 
-## 📡 API Endpoints
+## 📡 API Reference
 
-| Method | Route | Description |
+| Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/health` | Verify API and SQLite database status |
-| `GET` | `/api/regions` | Retrieve all registered regional baseline readings |
-| `POST` | `/api/analyze` | Submit environmental parameters and return AI EQI assessment |
-| `GET` | `/api/history` | Retrieve historical analysis log entries |
+| `GET` | `/health` | Verify API and database status |
+| `GET` | `/api/products` | Retrieve all items and current stock levels |
+| `POST` | `/api/products` | Add or update a product in the catalog |
+| `POST` | `/api/chat` | Process customer query and return AI response |
+| `POST` | `/api/receipt` | Parse supplier invoice text and extract line items |
+| `GET` | `/api/sales` | Fetch sales ledger and total revenue |
+| `POST` | `/api/sales` | Record counter sale and decrement stock |
 
 ---
 

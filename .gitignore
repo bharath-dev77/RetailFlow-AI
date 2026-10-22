@@ -1,17 +1,17 @@
-# Python Bytecode
+# Python Bytecode & Cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 
-# Environments
+# Environments & Dependencies
 .venv/
 env/
 venv/
 ENV/
 
-# Databases & Logs
-environmental.db
+# Local Database & Logs
+retail.db
 *.sqlite3
 *.log
 
@@ -21,6 +21,6 @@ environmental.db
 # Streamlit Local Cache
 .streamlit/
 
-# OS-specific
+# OS-specific Files
 .DS_Store
 Thumbs.db
