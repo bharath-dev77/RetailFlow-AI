@@ -1,0 +1,8 @@
+region_name,latitude,longitude,pm2_5,pm10,so2,no2,water_ph,water_tds,water_do,water_bod,lead_ppm,chromium_ppm,industrial_density
+Palar River Basin (Ranipet Industrial Area),12.924,79.333,88.5,165.2,42.0,55.1,5.8,1850.0,3.2,14.5,0.08,0.42,High
+Manali Petrochemical Cluster (Chennai),13.166,80.264,112.0,198.0,65.4,78.2,7.2,1200.0,4.1,8.2,0.03,0.05,Very High
+Ennore Creek Coastal Wetland,13.220,80.320,65.0,110.0,31.0,40.0,7.9,2400.0,5.2,6.0,0.02,0.04,Moderate
+Guindy Industrial Estate (Chennai),13.006,80.205,74.0,135.0,28.0,48.0,6.9,850.0,5.8,4.5,0.01,0.02,Moderate
+Vellore Tannery Cluster (Perbut),12.916,79.132,92.0,172.0,48.0,58.0,5.5,2100.0,2.8,16.0,0.09,0.55,Very High
+Coimbatore Textile Corridor,11.016,76.965,55.0,95.0,18.0,25.0,8.2,950.0,6.1,5.2,0.01,0.01,Low
+Madurai Agro-Industrial Zone,9.925,78.119,48.0,82.0,15.0,22.0,7.4,650.0,6.8,3.2,0.005,0.008,Low
